@@ -10,7 +10,7 @@ class SolicitudesServicioController extends Controller
     public function index(Request $request)
     {
         $solicitudes = $request->user()->role === 'admin'
-            ? SolicitudServicio::with('user:id,name,email')->latest()->get()
+            ? SolicitudServicio::with('user:id,name,email', 'producto:id,nombre,precio')->latest()->get()
             : $request->user()->solicitudes()->latest()->get();
 
         return response()->json($solicitudes);
@@ -23,7 +23,18 @@ class SolicitudesServicioController extends Controller
             'asunto' => ['required', 'string', 'max:150'],
             'descripcion' => ['required', 'string'],
             'prioridad' => ['sometimes', 'in:baja,normal,alta,urgente'],
+            'product_id' => ['nullable', 'exists:productos,id'],
         ]);
+
+        if (!empty($validated['product_id'])) {
+            $producto = \App\Models\Producto::findOrFail($validated['product_id']);
+            if ($producto->stock < 1 || !$producto->activo) {
+                return response()->json(['message' => 'El producto no está disponible.'], 422);
+            }
+            $validated['tipo'] = 'compra';
+            $validated['asunto'] = 'Solicitud de compra: ' . $producto->nombre;
+            $validated['descripcion'] = $validated['descripcion'] ?: 'Solicitud de compra desde el catálogo.';
+        }
 
         $solicitud = $request->user()->solicitudes()->create($validated);
 

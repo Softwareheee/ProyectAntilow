@@ -11,6 +11,7 @@ class SolicitudServicio extends Model
 
     protected $fillable = [
         'user_id',
+        'product_id',
         'tipo',
         'asunto',
         'descripcion',
@@ -27,5 +28,10 @@ class SolicitudServicio extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function producto(): BelongsTo
+    {
+        return $this->belongsTo(Producto::class, 'product_id');
     }
 }
