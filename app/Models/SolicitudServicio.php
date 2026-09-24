@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class SolicitudServicio extends Model
 {
@@ -33,5 +34,13 @@ class SolicitudServicio extends Model
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class, 'product_id');
+    }
+
+    /**
+     * Relación con el reporte técnico creado por el administrador.
+     */
+    public function reporte(): HasOne
+    {
+        return $this->hasOne(ReporteServicio::class, 'solicitud_servicio_id');
     }
 }
