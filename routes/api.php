@@ -2,8 +2,8 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientesController;
-use App\Http\Controllers\SolicitudesServicioController;
 use App\Http\Controllers\ProductosController;
+use App\Http\Controllers\SolicitudesServicioController;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
