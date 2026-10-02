@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 // Rutas públicas sin token
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/productos', [ProductosController::class, 'index']);
 
 // Rutas privadas - con token
 Route::middleware('auth:sanctum')->group(function () {
@@ -23,8 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/solicitudes-servicio', [SolicitudesServicioController::class, 'store']);
     Route::get('/solicitudes-servicio', [SolicitudesServicioController::class, 'index']);
-    Route::get('/productos', [ProductosController::class, 'index']);
-    
+
     // Rutas para consultar reportes
     Route::get('/reportes', [ReportesController::class, 'index']);
     Route::get('/reportes/{id}', [ReportesController::class, 'show']);
