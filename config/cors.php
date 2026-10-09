@@ -19,6 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
+    // Orígenes locales permitidos para que Vite consuma la API durante desarrollo.
     'allowed_origins' => [
         'http://localhost:5173',
         'http://localhost:5174',

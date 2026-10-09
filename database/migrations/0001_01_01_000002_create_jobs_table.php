@@ -4,11 +4,10 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/** Inicializa colas, lotes y fallos de trabajos asíncronos de Laravel. */
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+    /** Crea las tablas usadas por el queue driver database. */
     public function up(): void
     {
         Schema::create('jobs', function (Blueprint $table) {
@@ -47,9 +46,7 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
+    /** Elimina las tablas auxiliares de cola. */
     public function down(): void
     {
         Schema::dropIfExists('jobs');

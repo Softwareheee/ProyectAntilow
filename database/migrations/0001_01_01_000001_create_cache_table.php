@@ -4,11 +4,10 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/** Inicializa el almacenamiento de caché y sus bloqueos distribuidos. */
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+    /** Crea las tablas que Laravel usa cuando el cache store es database. */
     public function up(): void
     {
         Schema::create('cache', function (Blueprint $table) {
@@ -24,9 +23,7 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
+    /** Elimina ambas tablas auxiliares de caché. */
     public function down(): void
     {
         Schema::dropIfExists('cache');

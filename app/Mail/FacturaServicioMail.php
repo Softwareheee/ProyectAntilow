@@ -11,23 +11,20 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
+/** Correo de cierre de servicio que adjunta la factura PDF del informe. */
 class FacturaServicioMail extends Mailable
 {
     use Queueable, SerializesModels;
 
     public $reporte;
 
-    /**
-     * Crear una nueva instancia del mensaje.
-     */
+    /** Recibe el informe cuyos datos alimentan el correo y el adjunto. */
     public function __construct(ReporteServicio $reporte)
     {
         $this->reporte = $reporte;
     }
 
-    /**
-     * Asunto y remitente del correo.
-     */
+    /** Define el asunto del mensaje con el número de solicitud atendida. */
     public function envelope(): Envelope
     {
         return new Envelope(
@@ -35,9 +32,7 @@ class FacturaServicioMail extends Mailable
         );
     }
 
-    /**
-     * Definición del contenido y la vista HTML del correo.
-     */
+    /** Selecciona la plantilla HTML que presenta el resumen al cliente. */
     public function content(): Content
     {
         return new Content(
@@ -45,9 +40,7 @@ class FacturaServicioMail extends Mailable
         );
     }
 
-    /**
-     * Adjuntar el PDF generado en vivo.
-     */
+    /** Genera y adjunta la factura PDF sin guardarla como archivo temporal. */
     public function attachments(): array
     {
         $pdf = Pdf::loadView('pdf.factura', ['reporte' => $this->reporte]);

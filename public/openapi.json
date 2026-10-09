@@ -1,0 +1,1883 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Antilow API",
+    "version": "1.0.0",
+    "description": "API de Antilow para autenticación, soporte técnico, catálogo de periféricos, inventario, clientes, administración de usuarios y reportes de servicio. Las rutas administrativas requieren un token Sanctum de un usuario con rol admin.",
+    "contact": {
+      "name": "Equipo Antilow"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Mismo host desde el que se sirve Laravel"
+    },
+    {
+      "url": "http://localhost:8000/api",
+      "description": "Desarrollo local con Docker Compose"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Autenticación",
+      "description": "Registro, inicio y cierre de sesión mediante tokens Sanctum."
+    },
+    {
+      "name": "Productos",
+      "description": "Catálogo público y gestión administrativa del inventario."
+    },
+    {
+      "name": "Solicitudes",
+      "description": "Solicitudes de soporte y compras vinculadas a clientes."
+    },
+    {
+      "name": "Usuarios",
+      "description": "Gestión de cuentas y roles, solo para administradores."
+    },
+    {
+      "name": "Clientes",
+      "description": "Directorio de clientes, solo para administradores."
+    },
+    {
+      "name": "Reportes",
+      "description": "Informes de servicio y descarga de factura PDF."
+    }
+  ],
+  "security": [],
+  "paths": {
+    "/register": {
+      "post": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Registrar cuenta de cliente",
+        "operationId": "register",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              },
+              "example": {
+                "name": "Ana Pérez",
+                "email": "ana@example.com",
+                "password": "ClaveSegura123"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cuenta creada y token emitido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/login": {
+      "post": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Iniciar sesión",
+        "operationId": "login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              },
+              "example": {
+                "email": "admin@antilow.test",
+                "password": "cambia-esta-clave"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Credenciales válidas; devuelve token y perfil.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/user": {
+      "get": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Consultar usuario autenticado",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Perfil de la sesión actual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/logout": {
+      "post": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Cerrar sesión actual",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token revocado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                },
+                "example": {
+                  "message": "Sesión cerrada"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/productos": {
+      "get": {
+        "tags": [
+          "Productos"
+        ],
+        "summary": "Consultar catálogo disponible",
+        "description": "Público. Visitantes y clientes reciben productos activos. Los cambios de stock requieren rol admin.",
+        "responses": {
+          "200": {
+            "description": "Productos ordenados del más reciente al más antiguo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Product"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Productos"
+        ],
+        "summary": "Crear producto",
+        "description": "Solo admin. Acepta multipart/form-data. Para imagen local enviar el campo imagen; imagen_url es opcional.",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductInput"
+              },
+              "encoding": {
+                "caracteristicas": {
+                  "contentType": "application/json"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Producto creado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "x-required-role": "admin"
+      }
+    },
+    "/productos/{producto}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProductId"
+        }
+      ],
+      "put": {
+        "tags": [
+          "Productos"
+        ],
+        "summary": "Actualizar producto",
+        "description": "Solo admin. Actualiza datos del producto usando JSON. Para reemplazar la imagen desde el navegador, utiliza POST con _method=PUT.",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Producto actualizado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "x-required-role": "admin"
+      },
+      "post": {
+        "tags": ["Productos"],
+        "summary": "Actualizar producto con imagen/form-data",
+        "description": "Solo admin. Es el método usado por el frontend: Laravel interpreta _method=PUT y ejecuta la actualización.",
+        "parameters": [
+          {
+            "name": "_method",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "enum": ["PUT"], "default": "PUT" }
+          }
+        ],
+        "security": [{ "sanctum": [] }],
+        "x-required-role": "admin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": { "$ref": "#/components/schemas/ProductUpdate" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Producto actualizado.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Product" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "$ref": "#/components/responses/ValidationError" }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Productos"
+        ],
+        "summary": "Actualizar parcialmente un producto",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Producto actualizado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "x-required-role": "admin"
+      },
+      "delete": {
+        "tags": [
+          "Productos"
+        ],
+        "summary": "Eliminar producto",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Producto e imagen local asociada eliminados."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "x-required-role": "admin"
+      }
+    },
+    "/solicitudes-servicio": {
+      "get": {
+        "tags": [
+          "Solicitudes"
+        ],
+        "summary": "Listar solicitudes",
+        "description": "Cliente: solo sus solicitudes. Admin: todas, con relaciones de usuario y producto.",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Solicitudes recientes primero.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceRequest"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Solicitudes"
+        ],
+        "summary": "Crear solicitud de soporte o compra",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceRequestInput"
+              },
+              "examples": {
+                "support": {
+                  "summary": "Solicitud de soporte",
+                  "value": {
+                    "tipo": "diagnóstico de equipo",
+                    "asunto": "Equipo no enciende",
+                    "descripcion": "El portátil dejó de encender hoy.",
+                    "prioridad": "alta"
+                  }
+                },
+                "purchase": {
+                  "summary": "Solicitud de compra",
+                  "value": {
+                    "product_id": 12,
+                    "tipo": "compra",
+                    "asunto": "Solicitud de compra: Teclado",
+                    "descripcion": "Me interesa este producto.",
+                    "prioridad": "normal"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Solicitud registrada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceRequest"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/solicitudes-servicio/{solicitudServicio}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ServiceRequestId"
+        }
+      ],
+      "patch": {
+        "tags": [
+          "Solicitudes"
+        ],
+        "summary": "Actualizar solicitud",
+        "description": "Solo admin. Permite cambiar estado, prioridad, valor y notas.",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceRequestUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Solicitud actualizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceRequest"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "x-required-role": "admin"
+      },
+      "delete": {
+        "tags": [
+          "Solicitudes"
+        ],
+        "summary": "Eliminar solicitud",
+        "description": "Solo admin.",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Solicitud eliminada."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "x-required-role": "admin"
+      }
+    },
+    "/usuarios": {
+      "get": {
+        "tags": [
+          "Usuarios"
+        ],
+        "summary": "Listar usuarios",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cuentas ordenadas por fecha de creación.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "x-required-role": "admin"
+      },
+      "post": {
+        "tags": [
+          "Usuarios"
+        ],
+        "summary": "Crear usuario",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuario creado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "x-required-role": "admin"
+      }
+    },
+    "/usuarios/{usuario}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/UserId"
+        }
+      ],
+      "put": {
+        "tags": [
+          "Usuarios"
+        ],
+        "summary": "Actualizar usuario",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Usuario actualizado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "x-required-role": "admin"
+      },
+      "patch": {
+        "tags": [
+          "Usuarios"
+        ],
+        "summary": "Actualizar parcialmente usuario",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Usuario actualizado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "x-required-role": "admin"
+      },
+      "delete": {
+        "tags": [
+          "Usuarios"
+        ],
+        "summary": "Eliminar usuario",
+        "description": "No se permite que el administrador elimine su propia cuenta.",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Usuario eliminado."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "description": "Intento de eliminar la propia cuenta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            }
+          }
+        },
+        "x-required-role": "admin"
+      }
+    },
+    "/clientes": {
+      "get": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Listar clientes",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Directorio de clientes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Client"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "x-required-role": "admin"
+      },
+      "post": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Crear cliente",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cliente creado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Client"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "x-required-role": "admin"
+      }
+    },
+    "/clientes/{clientes}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ClientId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Consultar cliente",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle del cliente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Client"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "x-required-role": "admin"
+      },
+      "put": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Actualizar cliente",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Respuesta del controlador con los datos enviados."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "x-required-role": "admin"
+      },
+      "patch": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Actualizar parcialmente cliente",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Respuesta del controlador con los datos enviados."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "x-required-role": "admin"
+      },
+      "delete": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Eliminar cliente",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Cliente eliminado."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "x-required-role": "admin"
+      }
+    },
+    "/reportes": {
+      "get": {
+        "tags": [
+          "Reportes"
+        ],
+        "summary": "Listar reportes",
+        "description": "Ruta autenticada; actualmente no restringida por rol en el backend.",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reportes con solicitud, cliente y administrador relacionados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceReport"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Reportes"
+        ],
+        "summary": "Crear reporte técnico",
+        "description": "Solo admin. Actualiza la solicitud como completada y envía la factura por correo al cliente.",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceReportInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Reporte guardado y correo enviado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceReportCreated"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "x-required-role": "admin"
+      }
+    },
+    "/reportes/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ReportId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Reportes"
+        ],
+        "summary": "Consultar reporte",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reporte individual con relaciones.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceReport"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/reportes/{id}/factura/descargar": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ReportId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Reportes"
+        ],
+        "summary": "Descargar factura PDF",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Archivo PDF de la factura.",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sanctum": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Sanctum token",
+        "description": "Usa el token devuelto por /login o /register. En Swagger UI, pulsa Authorize e ingresa el token sin la palabra Bearer."
+      }
+    },
+    "parameters": {
+      "ProductId": {
+        "name": "producto",
+        "in": "path",
+        "required": true,
+        "description": "Identificador del producto.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "ServiceRequestId": {
+        "name": "solicitudServicio",
+        "in": "path",
+        "required": true,
+        "description": "Identificador de la solicitud.",
+        "schema": { "type": "integer", "minimum": 1 }
+      },
+      "UserId": {
+        "name": "usuario",
+        "in": "path",
+        "required": true,
+        "description": "Identificador del usuario.",
+        "schema": { "type": "integer", "minimum": 1 }
+      },
+      "ClientId": {
+        "name": "clientes",
+        "in": "path",
+        "required": true,
+        "description": "Identificador del cliente.",
+        "schema": { "type": "integer", "minimum": 1 }
+      },
+      "ReportId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "Identificador del reporte.",
+        "schema": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Falta el token o no es válido.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Message"
+            },
+            "example": {
+              "message": "Unauthenticated."
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "La cuenta no tiene permisos de administrador.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Message"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "El recurso no existe.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Message"
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "Los datos no cumplen las reglas de validación.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "example": {
+              "message": "The given data was invalid.",
+              "errors": {
+                "email": [
+                  "The email field must be a valid email address."
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Message": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "Ana Pérez"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "ana@example.com"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "client"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "required": [
+          "user",
+          "token"
+        ],
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "token": {
+            "type": "string",
+            "description": "Token personal Sanctum."
+          }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "email",
+          "password"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 8
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "format": "password"
+          }
+        }
+      },
+      "Client": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "apellido": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true
+          },
+          "direccion": {
+            "type": "string",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ClientInput": {
+        "type": "object",
+        "required": [
+          "nombre",
+          "apellido",
+          "email"
+        ],
+        "properties": {
+          "nombre": {
+            "type": "string"
+          },
+          "apellido": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true
+          },
+          "direccion": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "UserCreate": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/RegisterRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "role": {
+                "type": "string",
+                "enum": [
+                  "admin",
+                  "client"
+                ],
+                "default": "client"
+              }
+            }
+          }
+        ]
+      },
+      "UserUpdate": {
+        "type": "object",
+        "minProperties": 1,
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 8
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "client"
+            ]
+          }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "categoria": {
+            "type": "string",
+            "example": "periferico"
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "precio": {
+            "type": "string",
+            "description": "Decimal serializado por Laravel."
+          },
+          "stock": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "imagen_url": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "caracteristicas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "activo": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ProductInput": {
+        "type": "object",
+        "required": [
+          "nombre",
+          "precio",
+          "stock"
+        ],
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "maxLength": 150
+          },
+          "categoria": {
+            "type": "string",
+            "maxLength": 80,
+            "default": "periferico"
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "precio": {
+            "type": "number",
+            "minimum": 0
+          },
+          "stock": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "imagen": {
+            "type": "string",
+            "format": "binary",
+            "description": "Imagen JPG, PNG, WEBP o GIF, máximo 5 MB."
+          },
+          "imagen_url": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "caracteristicas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "activo": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ProductUpdate": {
+        "type": "object",
+        "minProperties": 1,
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "maxLength": 150
+          },
+          "categoria": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "precio": {
+            "type": "number",
+            "minimum": 0
+          },
+          "stock": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "imagen": {
+            "type": "string",
+            "format": "binary"
+          },
+          "imagen_url": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "caracteristicas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "activo": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ServiceRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "user_id": {
+            "type": "integer"
+          },
+          "product_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "asunto": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "pendiente",
+              "en_proceso",
+              "resuelta",
+              "cancelada",
+              "resuelto"
+            ]
+          },
+          "prioridad": {
+            "type": "string",
+            "enum": [
+              "baja",
+              "normal",
+              "alta",
+              "urgente"
+            ]
+          },
+          "valor": {
+            "type": "string",
+            "nullable": true
+          },
+          "notas_admin": {
+            "type": "string",
+            "nullable": true
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "producto": {
+            "$ref": "#/components/schemas/Product"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ServiceRequestInput": {
+        "type": "object",
+        "required": [
+          "tipo",
+          "asunto",
+          "descripcion"
+        ],
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "asunto": {
+            "type": "string",
+            "maxLength": 150,
+            "description": "En compras, el backend establece el asunto según el producto."
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "prioridad": {
+            "type": "string",
+            "enum": [
+              "baja",
+              "normal",
+              "alta",
+              "urgente"
+            ],
+            "default": "normal"
+          },
+          "product_id": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Al enviarlo, la solicitud se registra como compra."
+          }
+        }
+      },
+      "ServiceRequestUpdate": {
+        "type": "object",
+        "minProperties": 1,
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "asunto": {
+            "type": "string",
+            "maxLength": 150
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "pendiente",
+              "en_proceso",
+              "resuelta",
+              "cancelada"
+            ]
+          },
+          "prioridad": {
+            "type": "string",
+            "enum": [
+              "baja",
+              "normal",
+              "alta",
+              "urgente"
+            ]
+          },
+          "valor": {
+            "type": "number",
+            "minimum": 0,
+            "nullable": true
+          },
+          "notas_admin": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ServiceReport": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "solicitud_servicio_id": {
+            "type": "integer"
+          },
+          "admin_id": {
+            "type": "integer"
+          },
+          "diagnostico": {
+            "type": "string"
+          },
+          "trabajo_realizado": {
+            "type": "string"
+          },
+          "repuestos_utilizados": {
+            "type": "string",
+            "nullable": true
+          },
+          "costo_mano_obra": {
+            "type": "string"
+          },
+          "costo_repuestos": {
+            "type": "string"
+          },
+          "costo_total": {
+            "type": "string"
+          },
+          "estado_atencion": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "solicitudservicio": {
+            "$ref": "#/components/schemas/ServiceRequest"
+          },
+          "administrador": {
+            "$ref": "#/components/schemas/User"
+          }
+        }
+      },
+      "ServiceReportInput": {
+        "type": "object",
+        "required": [
+          "solicitud_servicio_id",
+          "diagnostico",
+          "trabajo_realizado",
+          "costo_mano_obra",
+          "costo_repuestos"
+        ],
+        "properties": {
+          "solicitud_servicio_id": {
+            "type": "integer"
+          },
+          "diagnostico": {
+            "type": "string"
+          },
+          "trabajo_realizado": {
+            "type": "string"
+          },
+          "repuestos_utilizados": {
+            "type": "string",
+            "nullable": true
+          },
+          "costo_mano_obra": {
+            "type": "number",
+            "minimum": 0
+          },
+          "costo_repuestos": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      },
+      "ServiceReportCreated": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "reporte": {
+            "$ref": "#/components/schemas/ServiceReport"
+          }
+        }
+      }
+    }
+  }
+}

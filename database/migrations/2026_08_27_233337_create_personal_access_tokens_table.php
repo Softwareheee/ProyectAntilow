@@ -4,11 +4,10 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/** Crea el almacenamiento de tokens personales utilizado por Sanctum. */
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+    /** Registra tokens, permisos y fecha de último uso por usuario autenticable. */
     public function up(): void
     {
         Schema::create('personal_access_tokens', function (Blueprint $table) {
@@ -23,9 +22,7 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
+    /** Elimina la tabla de tokens al revertir la migración. */
     public function down(): void
     {
         Schema::dropIfExists('personal_access_tokens');

@@ -6,10 +6,10 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
+/** Gestiona registro, autenticación y revocación de tokens Sanctum. */
 class AuthController extends Controller
 {
-    //
-    //POST api/register Registro de usuario
+    /** Registra siempre un cliente y devuelve su token de acceso. */
     public function register(Request $request)
     {
         $validated = $request->validate([
@@ -33,7 +33,7 @@ class AuthController extends Controller
         ], 201);
     }
     
-    //POST api/login Inicio de sesión
+    /** Valida credenciales y crea un token personal para la sesión. */
     public function login(Request $request){
         $user = User::where('email', $request->email)->first();
         if (!$user || !Hash::check($request->password, $user->password)) {
@@ -48,7 +48,7 @@ class AuthController extends Controller
             'token' => $token
         ], 200);
     }
-    //POST api/logout Cerrar sesión
+    /** Revoca únicamente el token con el que se autenticó la petición. */
     public function logout(Request $request){
         $request->user()->currentAccessToken()->delete();
         return response()->json([

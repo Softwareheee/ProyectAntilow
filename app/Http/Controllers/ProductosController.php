@@ -6,8 +6,10 @@ use App\Models\Producto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
+/** Catálogo público y operaciones de inventario reservadas al administrador. */
 class ProductosController extends Controller
 {
+    /** Muestra productos activos a todos y el inventario completo al admin. */
     public function index(Request $request)
     {
         $query = Producto::query()->where('activo', true)->latest();
@@ -22,6 +24,7 @@ class ProductosController extends Controller
         return response()->json($products);
     }
 
+    /** Valida el producto y guarda opcionalmente una imagen en el disco público. */
     public function store(Request $request)
     {
         $validated = $this->validated($request);
@@ -36,6 +39,7 @@ class ProductosController extends Controller
         return response()->json($producto, 201);
     }
 
+    /** Actualiza datos del producto y reemplaza su imagen cuando se adjunta otra. */
     public function update(Request $request, Producto $producto)
     {
         $validated = $this->validated($request, false);
@@ -54,6 +58,7 @@ class ProductosController extends Controller
         return response()->json($producto);
     }
 
+    /** Borra el producto y, si pertenece al almacenamiento local, también su imagen. */
     public function destroy(Producto $producto)
     {
         if ($producto->imagen_url && str_contains($producto->imagen_url, '/storage/')) {
@@ -64,6 +69,7 @@ class ProductosController extends Controller
         return response()->noContent();
     }
 
+    /** Normaliza campos multipart y aplica las reglas compartidas de producto. */
     private function validated(Request $request, bool $required = true): array
     {
         $rule = $required ? 'required' : 'sometimes';
@@ -87,6 +93,7 @@ class ProductosController extends Controller
         ]);
     }
 
+    /** Convierte rutas locales de Storage en URLs completas para el navegador. */
     private function absoluteImageUrl(?string $imageUrl): ?string
     {
         if (!$imageUrl || str_starts_with($imageUrl, 'http://') || str_starts_with($imageUrl, 'https://')) {

@@ -4,19 +4,21 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/** Crea informes técnicos y sus importes asociados a una solicitud. */
 return new class extends Migration
 {
+    /** Guarda diagnóstico, trabajo, costos y responsable administrativo. */
     public function up(): void
     {
         Schema::create('reportes_servicio', function (Blueprint $table) {
             $table->id();
             
-            // Relación con solicitudes_servicio
+            // Cada informe pertenece al caso de soporte atendido.
             $table->foreignId('solicitud_servicio_id')
                   ->constrained('solicitudes_servicio')
                   ->cascadeOnDelete();
             
-            // Relación con el usuario administrador que redacta el reporte
+            // Conserva quién realizó y firmó la intervención.
             $table->foreignId('admin_id')
                   ->constrained('users')
                   ->cascadeOnDelete();
@@ -35,6 +37,7 @@ return new class extends Migration
         });
     }
 
+    /** Elimina los informes al revertir la migración. */
     public function down(): void
     {
         Schema::dropIfExists('reportes_servicio');

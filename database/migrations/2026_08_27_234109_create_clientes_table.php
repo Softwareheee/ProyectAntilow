@@ -4,11 +4,10 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/** Crea el directorio de datos de contacto administrado por Antilow. */
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+    /** Crea clientes con correo único y contacto opcional. */
     public function up(): void
     {
         Schema::create('clientes', function (Blueprint $table) {
@@ -22,9 +21,7 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
+    /** Elimina el directorio al revertir esta migración. */
     public function down(): void
     {
         Schema::dropIfExists('clientes');

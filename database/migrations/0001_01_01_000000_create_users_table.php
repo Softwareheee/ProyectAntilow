@@ -4,11 +4,10 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/** Crea cuentas, restablecimiento de contraseñas y sesiones de Laravel. */
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+    /** Inicializa las tablas base que usa la autenticación del proyecto. */
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
@@ -37,9 +36,7 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
+    /** Revierte las tablas de autenticación creadas aquí. */
     public function down(): void
     {
         Schema::dropIfExists('users');

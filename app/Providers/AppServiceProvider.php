@@ -4,21 +4,16 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
+/** Punto de registro y arranque de servicios globales de Laravel. */
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
+    /** Aquí se registrarían enlaces del contenedor específicos de Antilow. */
     public function register(): void
     {
-        //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
+    /** Punto para inicializaciones globales ejecutadas al arrancar Laravel. */
     public function boot(): void
     {
-        //
     }
 }

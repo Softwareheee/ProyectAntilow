@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\SolicitudServicio;
 use Illuminate\Http\Request;
 
+/** Administra solicitudes de soporte y compras asociadas a cuentas de usuario. */
 class SolicitudesServicioController extends Controller
 {
+    /** Admin recibe todas las solicitudes; clientes solo consultan las propias. */
     public function index(Request $request)
     {
         $solicitudes = $request->user()->role === 'admin'
@@ -16,6 +18,7 @@ class SolicitudesServicioController extends Controller
         return response()->json($solicitudes);
     }
 
+    /** Registra una solicitud y valida stock cuando se trata de una compra. */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -41,6 +44,7 @@ class SolicitudesServicioController extends Controller
         return response()->json($solicitud, 201);
     }
 
+    /** Actualiza estado, prioridad, costo o notas del seguimiento administrativo. */
     public function update(Request $request, SolicitudServicio $solicitudServicio)
     {
         $validated = $request->validate([
@@ -58,6 +62,7 @@ class SolicitudesServicioController extends Controller
         return response()->json($solicitudServicio->fresh('user:id,name,email'));
     }
 
+    /** Elimina la solicitud seleccionada por model binding. */
     public function destroy(SolicitudServicio $solicitudServicio)
     {
         $solicitudServicio->delete();

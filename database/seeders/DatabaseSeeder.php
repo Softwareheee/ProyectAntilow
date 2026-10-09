@@ -10,9 +10,7 @@ class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seed the application's database.
-     */
+    /** Mantiene cuentas iniciales reproducibles sin duplicar correos existentes. */
     public function run(): void
     {
         User::updateOrCreate(

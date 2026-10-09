@@ -10,11 +10,10 @@ use App\Models\SolicitudServicio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/** Genera informes técnicos, actualiza casos y entrega facturas PDF. */
 class ReportesController extends Controller
 {
-    /**
-     * Devuelve la lista completa de reportes generados.
-     */
+    /** Lista reportes con cliente, solicitud, producto y administrador relacionados. */
     public function index()
     {
         $reportes = ReporteServicio::with([
@@ -26,12 +25,7 @@ class ReportesController extends Controller
         return response()->json($reportes);
     }
 
-    /**
-     * Guarda el reporte técnico y actualiza el estado de la solicitud de servicio.
-     */
-   /**
-     * Guarda el reporte técnico, actualiza el estado de la solicitud y envía la factura por correo.
-     */
+    /** Crea el informe, cierra la solicitud y envía la factura al cliente. */
     public function store(Request $request)
     {
         $validatedData = $request->validate([
@@ -57,7 +51,7 @@ class ReportesController extends Controller
             'estado_atencion'       => 'completado'
         ]);
 
-        // Actualizar el estado y valor en la solicitud original
+        // La solicitud conserva el resultado y el total que se facturará.
         $solicitud = SolicitudServicio::find($validatedData['solicitud_servicio_id']);
         if ($solicitud) {
             $solicitud->update([
@@ -66,10 +60,10 @@ class ReportesController extends Controller
             ]);
         }
 
-        // Cargar las relaciones necesarias para la plantilla Blade y la generación del PDF
+        // La plantilla de correo y el PDF necesitan los datos relacionados.
         $reporte->load(['solicitudservicio.user', 'solicitudservicio.producto', 'administrador']);
 
-        // Enviar notificación por correo electrónico con el PDF al cliente
+        // Si la solicitud pertenece a una cuenta, envía la factura a su correo.
         if ($reporte->solicitudservicio && $reporte->solicitudservicio->user) {
             Mail::to($reporte->solicitudservicio->user->email)->send(new FacturaServicioMail($reporte));
         }
@@ -79,9 +73,7 @@ class ReportesController extends Controller
             'reporte' => $reporte
         ], 201);
     }
-    /**
-     * Muestra el detalle de un reporte individual.
-     */
+    /** Devuelve un informe y sus relaciones por identificador. */
     public function show(int|string $id)
     {
         $reporte = ReporteServicio::with([
@@ -93,17 +85,17 @@ class ReportesController extends Controller
         return response()->json($reporte);
     }
 
+    /** Renderiza la vista de factura y responde con un archivo PDF descargable. */
     public function descargarFactura($id)
-{
-    $reporte = ReporteServicio::with([
-        'solicitudservicio.user',
-        'administrador'
-    ])->findOrFail($id);
+    {
+        $reporte = ReporteServicio::with([
+            'solicitudservicio.user',
+            'administrador'
+        ])->findOrFail($id);
 
-    // Generar el PDF desde la vista Blade
-    $pdf = Pdf::loadView('pdf.factura', compact('reporte'));
+        $pdf = Pdf::loadView('pdf.factura', compact('reporte'));
 
-    return $pdf->download("Factura_Antilow_REQ_{$reporte->solicitud_servicio_id}.pdf");
-}
+        return $pdf->download("Factura_Antilow_REQ_{$reporte->solicitud_servicio_id}.pdf");
+    }
 
 }

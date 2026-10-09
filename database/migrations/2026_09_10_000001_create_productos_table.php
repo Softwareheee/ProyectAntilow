@@ -4,8 +4,10 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/** Crea el inventario persistente de periféricos que se publica en el catálogo. */
 return new class extends Migration
 {
+    /** Registra precio, stock, imagen, características y visibilidad del producto. */
     public function up(): void
     {
         if (Schema::hasTable('productos')) {
@@ -26,6 +28,7 @@ return new class extends Migration
         });
     }
 
+    /** Elimina la tabla de productos al revertir el esquema. */
     public function down(): void
     {
         Schema::dropIfExists('productos');

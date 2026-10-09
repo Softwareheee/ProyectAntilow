@@ -6,77 +6,49 @@ use App\Models\Clientes;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
+/** CRUD del directorio de clientes disponible para el administrador. */
 class ClientesController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    //GET este metodo lista todos los datos
+    /** Devuelve todos los clientes registrados. */
     public function index()
     {
-        //
         $clientes = Clientes::all();
         return response()->json($clientes, 200);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    //Levanta vistas HTML
+    /** Método de vista no utilizado por la API resource. */
     public function create()
     {
-        //
-
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    //POST este metodo crea un nuevo registro
+    /** Persiste un cliente enviado por el panel administrativo. */
     public function store(Request $request)
     {
-        //
         $clientes = Clientes::create($request->all());
         return response()->json($clientes, 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    //GET este metodo muestra un registro especifico por medio de id
+    /** Devuelve el cliente resuelto por el model binding de Laravel. */
     public function show(Clientes $clientes)
     {
-        //
         return response()->json($clientes, 200);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    //Levanta vistas HTML
+    /** Método de vista no utilizado por la API resource. */
     public function edit(Clientes $clientes)
     {
-        //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    //PUT este metodo actualiza un registro especifico por medio de id
+    /** Actualiza los campos del cliente identificado por su ID. */
     public function update(Request $request, $id)
     {
-        //
         Clientes::where('id', $id)->update($request->all());
         return response()->json($request, 200);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    //DELETE este metodo elimina un registro especifico por medio de id
+    /** Elimina un cliente y responde sin cuerpo. */
     public function destroy(Request $request, $id)
     {
-        //
         Clientes::where('id', $id )->delete();
         return response()->json(null, 204);
     }
