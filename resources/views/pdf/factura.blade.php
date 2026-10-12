@@ -26,8 +26,11 @@
         <tr>
             <td>
                 <strong>Facturado a:</strong><br>
-                {{ $reporte->solicitudservicio->user->name }}<br>
-                {{ $reporte->solicitudservicio->user->email }}
+                {{ $reporte->nombre_cliente ?: ($reporte->solicitudservicio->user->name ?? 'Cliente') }}<br>
+                {{ $reporte->solicitudservicio->user->email ?? '' }}<br>
+                @if ($reporte->telefono_cliente)
+                    Teléfono: {{ $reporte->telefono_cliente }}
+                @endif
             </td>
             <td style="text-align: right;">
                 <strong>Factura N°:</strong> #FAC-00{{ $reporte->id }}<br>

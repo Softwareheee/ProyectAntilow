@@ -16,6 +16,8 @@ class ReporteServicio extends Model
     protected $fillable = [
         'solicitud_servicio_id',
         'admin_id',
+        'nombre_cliente',
+        'telefono_cliente',
         'diagnostico',
         'trabajo_realizado',
         'repuestos_utilizados',

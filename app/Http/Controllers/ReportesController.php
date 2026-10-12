@@ -14,15 +14,19 @@ use Illuminate\Support\Facades\Auth;
 class ReportesController extends Controller
 {
     /** Lista reportes con cliente, solicitud, producto y administrador relacionados. */
-    public function index()
+    public function index(Request $request)
     {
-        $reportes = ReporteServicio::with([
+        $query = ReporteServicio::with([
             'solicitudservicio.user',
             'solicitudservicio.producto',
             'administrador'
-        ])->latest()->get();
+        ])->latest();
 
-        return response()->json($reportes);
+        if ($request->user()->role !== 'admin') {
+            $query->whereHas('solicitudservicio', fn ($solicitudQuery) => $solicitudQuery->where('user_id', $request->user()->id));
+        }
+
+        return response()->json($query->get());
     }
 
     /** Crea el informe, cierra la solicitud y envía la factura al cliente. */
@@ -38,10 +42,13 @@ class ReportesController extends Controller
         ]);
 
         $costoTotal = $validatedData['costo_mano_obra'] + $validatedData['costo_repuestos'];
+        $solicitud = SolicitudServicio::with('user')->findOrFail($validatedData['solicitud_servicio_id']);
 
         $reporte = ReporteServicio::create([
             'solicitud_servicio_id' => $validatedData['solicitud_servicio_id'],
             'admin_id'              => Auth::id(),
+            'nombre_cliente'        => $solicitud->nombre_cliente ?: $solicitud->user?->name,
+            'telefono_cliente'      => $solicitud->telefono_cliente,
             'diagnostico'           => $validatedData['diagnostico'],
             'trabajo_realizado'     => $validatedData['trabajo_realizado'],
             'repuestos_utilizados'  => $validatedData['repuestos_utilizados'] ?? null,
@@ -52,13 +59,10 @@ class ReportesController extends Controller
         ]);
 
         // La solicitud conserva el resultado y el total que se facturará.
-        $solicitud = SolicitudServicio::find($validatedData['solicitud_servicio_id']);
-        if ($solicitud) {
-            $solicitud->update([
-                'estado' => 'resuelto',
-                'valor'  => $costoTotal
-            ]);
-        }
+        $solicitud->update([
+            'estado' => 'resuelto',
+            'valor'  => $costoTotal
+        ]);
 
         // La plantilla de correo y el PDF necesitan los datos relacionados.
         $reporte->load(['solicitudservicio.user', 'solicitudservicio.producto', 'administrador']);
@@ -74,24 +78,35 @@ class ReportesController extends Controller
         ], 201);
     }
     /** Devuelve un informe y sus relaciones por identificador. */
-    public function show(int|string $id)
+    public function show(Request $request, int|string $id)
     {
-        $reporte = ReporteServicio::with([
+        $query = ReporteServicio::with([
             'solicitudservicio.user',
             'solicitudservicio.producto',
             'administrador'
-        ])->findOrFail($id);
+        ]);
+
+        if ($request->user()->role !== 'admin') {
+            $query->whereHas('solicitudservicio', fn ($solicitudQuery) => $solicitudQuery->where('user_id', $request->user()->id));
+        }
+
+        $reporte = $query->findOrFail($id);
 
         return response()->json($reporte);
     }
 
     /** Renderiza la vista de factura y responde con un archivo PDF descargable. */
-    public function descargarFactura($id)
+    public function descargarFactura(Request $request, $id)
     {
-        $reporte = ReporteServicio::with([
+        $query = ReporteServicio::with([
             'solicitudservicio.user',
             'administrador'
-        ])->findOrFail($id);
+        ]);
+
+        if ($request->user()->role !== 'admin') {
+            $query->whereHas('solicitudservicio', fn ($solicitudQuery) => $solicitudQuery->where('user_id', $request->user()->id));
+        }
+        $reporte = $query->findOrFail($id);
 
         $pdf = Pdf::loadView('pdf.factura', compact('reporte'));
 

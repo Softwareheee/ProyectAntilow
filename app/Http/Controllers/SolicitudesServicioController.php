@@ -25,6 +25,8 @@ class SolicitudesServicioController extends Controller
             'tipo' => ['required', 'string', 'max:100'],
             'asunto' => ['required', 'string', 'max:150'],
             'descripcion' => ['required', 'string'],
+            'nombre_cliente' => ['required_without:product_id', 'nullable', 'string', 'max:255'],
+            'telefono_cliente' => ['required_without:product_id', 'nullable', 'string', 'max:30'],
             'prioridad' => ['sometimes', 'in:baja,normal,alta,urgente'],
             'product_id' => ['nullable', 'exists:productos,id'],
         ]);

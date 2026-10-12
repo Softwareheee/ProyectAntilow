@@ -13,6 +13,8 @@ class SolicitudServicio extends Model
 
     protected $fillable = [
         'user_id',
+        'nombre_cliente',
+        'telefono_cliente',
         'product_id',
         'tipo',
         'asunto',
