@@ -13,7 +13,7 @@ class SolicitudesServicioController extends Controller
     {
         $solicitudes = $request->user()->role === 'admin'
             ? SolicitudServicio::with('user:id,name,email', 'producto:id,nombre,precio')->latest()->get()
-            : $request->user()->solicitudes()->latest()->get();
+            : $request->user()->solicitudes()->with('producto:id,nombre,precio')->latest()->get();
 
         return response()->json($solicitudes);
     }
@@ -25,10 +25,11 @@ class SolicitudesServicioController extends Controller
             'tipo' => ['required', 'string', 'max:100'],
             'asunto' => ['required', 'string', 'max:150'],
             'descripcion' => ['required', 'string'],
-            'nombre_cliente' => ['required_without:product_id', 'nullable', 'string', 'max:255'],
-            'telefono_cliente' => ['required_without:product_id', 'nullable', 'string', 'max:30'],
+            'nombre_cliente' => ['required', 'string', 'max:255'],
+            'telefono_cliente' => ['required', 'string', 'max:30'],
             'prioridad' => ['sometimes', 'in:baja,normal,alta,urgente'],
             'product_id' => ['nullable', 'exists:productos,id'],
+            'cantidad' => ['required_with:product_id', 'nullable', 'integer', 'min:1', 'max:65535'],
         ]);
 
         if (!empty($validated['product_id'])) {
@@ -36,9 +37,13 @@ class SolicitudesServicioController extends Controller
             if ($producto->stock < 1 || !$producto->activo) {
                 return response()->json(['message' => 'El producto no está disponible.'], 422);
             }
+            if ($validated['cantidad'] > $producto->stock) {
+                return response()->json(['message' => 'La cantidad solicitada supera las unidades disponibles.'], 422);
+            }
             $validated['tipo'] = 'compra';
             $validated['asunto'] = 'Solicitud de compra: ' . $producto->nombre;
-            $validated['descripcion'] = $validated['descripcion'] ?: 'Solicitud de compra desde el catálogo.';
+            $validated['descripcion'] = 'El cliente solicita ' . $validated['cantidad'] . ' unidad(es) de ' . $producto->nombre . '.';
+            $validated['precio_unitario'] = $producto->precio;
         }
 
         $solicitud = $request->user()->solicitudes()->create($validated);

@@ -16,6 +16,8 @@ class SolicitudServicio extends Model
         'nombre_cliente',
         'telefono_cliente',
         'product_id',
+        'cantidad',
+        'precio_unitario',
         'tipo',
         'asunto',
         'descripcion',
@@ -27,6 +29,7 @@ class SolicitudServicio extends Model
 
     protected $casts = [
         'valor' => 'decimal:2',
+        'precio_unitario' => 'decimal:2',
     ];
 
     /** Cuenta propietaria que creó el requerimiento. */

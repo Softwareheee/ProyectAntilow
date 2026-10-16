@@ -590,6 +590,48 @@
         "x-required-role": "admin"
       }
     },
+    "/solicitudes-servicio/{solicitudServicio}/factura-compra/descargar": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ServiceRequestId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Solicitudes"
+        ],
+        "summary": "Descargar factura proforma de compra",
+        "description": "Genera un PDF con los datos del cliente, producto, cantidad, precio unitario y total estimado. No acredita el pago ni confirma la compra. Solo admin.",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Archivo PDF con el detalle de la solicitud de compra.",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "x-required-role": "admin"
+      }
+    },
     "/usuarios": {
       "get": {
         "tags": [
@@ -1651,6 +1693,21 @@
             "type": "integer",
             "nullable": true
           },
+          "cantidad": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "precio_unitario": {
+            "type": "string",
+            "nullable": true,
+            "description": "Precio registrado al crear una solicitud de compra."
+          },
+          "nombre_cliente": {
+            "type": "string"
+          },
+          "telefono_cliente": {
+            "type": "string"
+          },
           "tipo": {
             "type": "string"
           },
@@ -1708,7 +1765,9 @@
         "required": [
           "tipo",
           "asunto",
-          "descripcion"
+          "descripcion",
+          "nombre_cliente",
+          "telefono_cliente"
         ],
         "properties": {
           "tipo": {
@@ -1737,6 +1796,19 @@
             "type": "integer",
             "nullable": true,
             "description": "Al enviarlo, la solicitud se registra como compra."
+          },
+          "cantidad": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Obligatorio en solicitudes de compra; no puede superar el inventario disponible."
+          },
+          "nombre_cliente": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "telefono_cliente": {
+            "type": "string",
+            "maxLength": 30
           }
         }
       },

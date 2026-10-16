@@ -113,4 +113,15 @@ class ReportesController extends Controller
         return $pdf->download("Factura_Antilow_REQ_{$reporte->solicitud_servicio_id}.pdf");
     }
 
+    /** Genera el detalle PDF de una solicitud de compra, separado de la factura técnica. */
+    public function descargarFacturaCompra(SolicitudServicio $solicitudServicio)
+    {
+        abort_unless($solicitudServicio->tipo === 'compra', 404);
+
+        $solicitud = $solicitudServicio->load(['user:id,name,email', 'producto:id,nombre,precio']);
+        $pdf = Pdf::loadView('pdf.factura_compra', compact('solicitud'));
+
+        return $pdf->download("Proforma_Compra_Antilow_{$solicitud->id}.pdf");
+    }
+
 }

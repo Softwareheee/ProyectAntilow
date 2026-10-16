@@ -44,6 +44,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('usuarios', App\Http\Controllers\UsuariosController::class)->except(['create', 'edit', 'show']);
         Route::patch('/solicitudes-servicio/{solicitudServicio}', [SolicitudesServicioController::class, 'update']);
         Route::delete('/solicitudes-servicio/{solicitudServicio}', [SolicitudesServicioController::class, 'destroy']);
+        Route::get('/solicitudes-servicio/{solicitudServicio}/factura-compra/descargar', [ReportesController::class, 'descargarFacturaCompra']);
         Route::apiResource('clientes', ClientesController::class);
         Route::apiResource('productos', ProductosController::class)->except(['create', 'edit', 'show', 'index']);
         
