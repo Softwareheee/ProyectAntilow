@@ -34,10 +34,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/solicitudes-servicio', [SolicitudesServicioController::class, 'store']);
     Route::get('/solicitudes-servicio', [SolicitudesServicioController::class, 'index']);
 
-    // Reportes visibles para usuarios autenticados; su creación sí es administrativa.
+    // --- MÓDULO DE REPORTES ---
+    // 1. Consulta general
     Route::get('/reportes', [ReportesController::class, 'index']);
-    Route::get('/reportes/{id}', [ReportesController::class, 'show']);
+
+    // 2. Exportaciones Generales (Rutas fijas PRIMERO)
+    Route::get('/reportes/exportar/excel', [ReportesController::class, 'exportarExcelGeneral']);
+    Route::get('/reportes/exportar/csv', [ReportesController::class, 'exportarCsvGeneral']);
+
+    // 3. Creación de comentarios / seguimiento
+    Route::post('/reportes/comentarios', [ReportesController::class, 'guardarComentario']);
+
+    // 4. Exportaciones e información individual por ID
     Route::get('/reportes/{id}/factura/descargar', [ReportesController::class, 'descargarFactura']);
+    Route::get('/reportes/{id}/exportar/excel', [ReportesController::class, 'downloadExcel']);
+    Route::get('/reportes/{id}/exportar/csv', [ReportesController::class, 'downloadCsv']);
+
+    // 5. Consulta por ID (SIEMPRE AL FINAL para no atrapar subrutas)
+    Route::get('/reportes/{id}', [ReportesController::class, 'show']);
 
     // Operaciones de gestión de datos reservadas a cuentas con role=admin.
     Route::middleware(EnsureUserIsAdmin::class)->group(function () {

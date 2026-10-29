@@ -2,24 +2,29 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ReporteGeneralExport;
+use App\Exports\ReporteIndividualExport;
 use App\Mail\FacturaServicioMail;
-use Illuminate\Support\Facades\Mail;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\ComentarioReporte;
 use App\Models\ReporteServicio;
 use App\Models\SolicitudServicio;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use Maatwebsite\Excel\Facades\Excel;
 
-/** Genera informes técnicos, actualiza casos y entrega facturas PDF. */
+/** Genera informes técnicos, actualiza casos, gestiona seguimientos y entrega facturas PDF, Excel y CSV. */
 class ReportesController extends Controller
 {
-    /** Lista reportes con cliente, solicitud, producto y administrador relacionados. */
+    /** Lista reportes con cliente, solicitud, producto, administrador y comentarios relacionados. */
     public function index(Request $request)
     {
         $query = ReporteServicio::with([
             'solicitudservicio.user',
             'solicitudservicio.producto',
-            'administrador'
+            'administrador',
+            'comentarios.user'
         ])->latest();
 
         if ($request->user()->role !== 'admin') {
@@ -58,18 +63,19 @@ class ReportesController extends Controller
             'estado_atencion'       => 'completado'
         ]);
 
-        // La solicitud conserva el resultado y el total que se facturará.
         $solicitud->update([
             'estado' => 'resuelto',
             'valor'  => $costoTotal
         ]);
 
-        // La plantilla de correo y el PDF necesitan los datos relacionados.
-        $reporte->load(['solicitudservicio.user', 'solicitudservicio.producto', 'administrador']);
+        $reporte->load(['solicitudservicio.user', 'solicitudservicio.producto', 'administrador', 'comentarios.user']);
 
-        // Si la solicitud pertenece a una cuenta, envía la factura a su correo.
         if ($reporte->solicitudservicio && $reporte->solicitudservicio->user) {
-            Mail::to($reporte->solicitudservicio->user->email)->send(new FacturaServicioMail($reporte));
+            try {
+                Mail::to($reporte->solicitudservicio->user->email)->send(new FacturaServicioMail($reporte));
+            } catch (\Exception $e) {
+                // Silenciar fallo de SMTP local
+            }
         }
 
         return response()->json([
@@ -77,13 +83,15 @@ class ReportesController extends Controller
             'reporte' => $reporte
         ], 201);
     }
+
     /** Devuelve un informe y sus relaciones por identificador. */
     public function show(Request $request, int|string $id)
     {
         $query = ReporteServicio::with([
             'solicitudservicio.user',
             'solicitudservicio.producto',
-            'administrador'
+            'administrador',
+            'comentarios.user'
         ]);
 
         if ($request->user()->role !== 'admin') {
@@ -108,6 +116,10 @@ class ReportesController extends Controller
         }
         $reporte = $query->findOrFail($id);
 
+        if (ob_get_length()) {
+            ob_end_clean();
+        }
+
         $pdf = Pdf::loadView('pdf.factura', compact('reporte'));
 
         return $pdf->download("Factura_Antilow_REQ_{$reporte->solicitud_servicio_id}.pdf");
@@ -119,9 +131,87 @@ class ReportesController extends Controller
         abort_unless($solicitudServicio->tipo === 'compra', 404);
 
         $solicitud = $solicitudServicio->load(['user:id,name,email', 'producto:id,nombre,precio']);
+
+        if (ob_get_length()) {
+            ob_end_clean();
+        }
+
         $pdf = Pdf::loadView('pdf.factura_compra', compact('solicitud'));
 
         return $pdf->download("Proforma_Compra_Antilow_{$solicitud->id}.pdf");
     }
 
+    /** Guarda las observaciones / seguimientos de un reporte técnico. */
+    public function guardarComentario(Request $request)
+    {
+        $validated = $request->validate([
+            'reporte_servicio_id' => 'required|exists:reportes_servicio,id',
+            'tipo'                => 'required|in:felicitacion,falla_post_mantenimiento,duda,sugerencia',
+            'mensaje'             => 'required|string|max:1000',
+        ]);
+
+        $comentario = ComentarioReporte::create([
+            'reporte_servicio_id' => $validated['reporte_servicio_id'],
+            'user_id'             => Auth::id(),
+            'tipo'                => $validated['tipo'],
+            'mensaje'             => $validated['mensaje'],
+        ]);
+
+        return response()->json([
+            'message' => 'Seguimiento registrado con éxito para el reporte.',
+            'data'    => $comentario
+        ], 201);
+    }
+
+    /** Exporta el reporte contable general en formato Excel (.xlsx). */
+    public function exportarExcelGeneral()
+    {
+        if (ob_get_length()) {
+            ob_end_clean();
+        }
+
+        return (new ReporteGeneralExport)->download('reporte_contable_general.xlsx');
+    }
+
+    /** Exporta el reporte contable general en formato CSV (.csv). */
+    public function exportarCsvGeneral()
+    {
+        if (ob_get_length()) {
+            ob_end_clean();
+        }
+
+        return (new ReporteGeneralExport)->download(
+            'reporte_contable_general.csv',
+            \Maatwebsite\Excel\Excel::CSV,
+            ['Content-Type' => 'text/csv']
+        );
+    }
+
+    /** Exporta un reporte técnico individual por ID en formato Excel (.xlsx). */
+    public function downloadExcel($id)
+    {
+        if (ob_get_length()) {
+            ob_end_clean();
+        }
+
+        return Excel::download(
+            new ReporteIndividualExport($id),
+            "reporte_{$id}.xlsx"
+        );
+    }
+
+    /** Exporta un reporte técnico individual por ID en formato CSV (.csv). */
+    public function downloadCsv($id)
+    {
+        if (ob_get_length()) {
+            ob_end_clean();
+        }
+
+        return Excel::download(
+            new ReporteIndividualExport($id),
+            "reporte_{$id}.csv",
+            \Maatwebsite\Excel\Excel::CSV,
+            ['Content-Type' => 'text/csv']
+        );
+    }
 }

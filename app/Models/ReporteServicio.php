@@ -4,9 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/** Informe técnico con costos, administrador responsable y caso atendido. */
 class ReporteServicio extends Model
 {
     use HasFactory;
@@ -24,18 +22,22 @@ class ReporteServicio extends Model
         'costo_mano_obra',
         'costo_repuestos',
         'costo_total',
-        'estado_atencion'
+        'estado_atencion',
     ];
 
-    /** Solicitud que originó el trabajo técnico y la factura. */
-    public function solicitudservicio(): BelongsTo
+    public function solicitudservicio()
     {
         return $this->belongsTo(SolicitudServicio::class, 'solicitud_servicio_id');
     }
 
-    /** Cuenta administrativa que elaboró el informe. */
-    public function administrador(): BelongsTo
+    public function administrador()
     {
         return $this->belongsTo(User::class, 'admin_id');
+    }
+
+    // --- AGREGA ESTA RELACIÓN QUE FALTA ---
+    public function comentarios()
+    {
+        return $this->hasMany(ComentarioReporte::class, 'reporte_servicio_id');
     }
 }
