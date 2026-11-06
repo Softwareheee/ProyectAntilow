@@ -3,7 +3,7 @@
   "info": {
     "title": "Antilow API",
     "version": "1.0.0",
-    "description": "API de Antilow para autenticación, soporte técnico, catálogo de periféricos, inventario, clientes, administración de usuarios y reportes de servicio. Las rutas administrativas requieren un token Sanctum de un usuario con rol admin.",
+    "description": "API de Antilow para autenticación, soporte técnico, catálogo e inventario, clientes, administración de usuarios, reportes, comentarios, facturas PDF y exportaciones Excel/CSV. Las rutas administrativas requieren un token Sanctum y el rol admin.",
     "contact": {
       "name": "Equipo Antilow"
     }
@@ -41,7 +41,11 @@
     },
     {
       "name": "Reportes",
-      "description": "Informes de servicio y descarga de factura PDF."
+      "description": "Informes técnicos, comentarios de seguimiento, facturas PDF y exportaciones contables o individuales a Excel/CSV."
+    },
+    {
+      "name": "Documentación",
+      "description": "Especificación OpenAPI servida por la API."
     }
   ],
   "security": [],
@@ -53,6 +57,7 @@
         ],
         "summary": "Registrar cuenta de cliente",
         "operationId": "register",
+        "description": "Crea una cuenta pública con rol client e inicia sesión devolviendo un token Sanctum. La validación exige nombre, correo único y contraseña de al menos 8 caracteres.",
         "requestBody": {
           "required": true,
           "content": {
@@ -92,6 +97,7 @@
         ],
         "summary": "Iniciar sesión",
         "operationId": "login",
+        "description": "Verifica correo y contraseña. Devuelve el perfil y un token Sanctum que se debe enviar como Bearer en las operaciones protegidas.",
         "requestBody": {
           "required": true,
           "content": {
@@ -132,6 +138,7 @@
           "Autenticación"
         ],
         "summary": "Consultar usuario autenticado",
+        "description": "Devuelve el perfil asociado al token Sanctum de la solicitud actual.",
         "security": [
           {
             "sanctum": []
@@ -160,6 +167,7 @@
           "Autenticación"
         ],
         "summary": "Cerrar sesión actual",
+        "description": "Revoca el token Sanctum usado en esta llamada; otros tokens activos de la misma cuenta no se revocan.",
         "security": [
           {
             "sanctum": []
@@ -349,6 +357,7 @@
           "Productos"
         ],
         "summary": "Actualizar parcialmente un producto",
+        "description": "Solo admin. Modifica únicamente los campos enviados; acepta JSON y puede actualizar datos del inventario y su disponibilidad.",
         "security": [
           {
             "sanctum": []
@@ -395,6 +404,7 @@
           "Productos"
         ],
         "summary": "Eliminar producto",
+        "description": "Solo admin. Elimina el producto y, cuando la imagen pertenece al almacenamiento local público, también elimina ese archivo.",
         "security": [
           {
             "sanctum": []
@@ -453,6 +463,7 @@
           "Solicitudes"
         ],
         "summary": "Crear solicitud de soporte o compra",
+        "description": "Registra una solicitud ligada al usuario autenticado. Para compras envía product_id, cantidad, nombre_cliente y telefono_cliente; el servidor comprueba disponibilidad y conserva el precio vigente como referencia, sin reservar ni descontar stock. Para soporte, tipo, asunto, descripcion y datos de contacto son requeridos.",
         "security": [
           {
             "sanctum": []
@@ -638,6 +649,7 @@
           "Usuarios"
         ],
         "summary": "Listar usuarios",
+        "description": "Solo admin. Devuelve las cuentas registradas, incluyendo su identificador, nombre, correo y rol.",
         "security": [
           {
             "sanctum": []
@@ -671,6 +683,7 @@
           "Usuarios"
         ],
         "summary": "Crear usuario",
+        "description": "Solo admin. Crea una cuenta indicando nombre, correo, contraseña y rol client o admin.",
         "security": [
           {
             "sanctum": []
@@ -721,6 +734,7 @@
           "Usuarios"
         ],
         "summary": "Actualizar usuario",
+        "description": "Solo admin. Reemplaza los campos de la cuenta indicados en el esquema; la contraseña puede omitirse si no se desea cambiar.",
         "security": [
           {
             "sanctum": []
@@ -767,6 +781,7 @@
           "Usuarios"
         ],
         "summary": "Actualizar parcialmente usuario",
+        "description": "Solo admin. Actualiza los campos enviados de la cuenta; la contraseña es opcional.",
         "security": [
           {
             "sanctum": []
@@ -852,6 +867,7 @@
           "Clientes"
         ],
         "summary": "Listar clientes",
+        "description": "Solo admin. Devuelve el directorio de clientes almacenado por la API.",
         "security": [
           {
             "sanctum": []
@@ -885,6 +901,7 @@
           "Clientes"
         ],
         "summary": "Crear cliente",
+        "description": "Solo admin. Crea un registro de cliente con los campos definidos en ClientInput.",
         "security": [
           {
             "sanctum": []
@@ -921,7 +938,7 @@
         "x-required-role": "admin"
       }
     },
-    "/clientes/{clientes}": {
+    "/clientes/{cliente}": {
       "parameters": [
         {
           "$ref": "#/components/parameters/ClientId"
@@ -932,6 +949,7 @@
           "Clientes"
         ],
         "summary": "Consultar cliente",
+        "description": "Solo admin. Devuelve el registro de cliente identificado por cliente.",
         "security": [
           {
             "sanctum": []
@@ -965,6 +983,7 @@
           "Clientes"
         ],
         "summary": "Actualizar cliente",
+        "description": "Solo admin. Reemplaza los campos del registro de cliente enviados en el cuerpo JSON.",
         "security": [
           {
             "sanctum": []
@@ -1001,6 +1020,7 @@
           "Clientes"
         ],
         "summary": "Actualizar parcialmente cliente",
+        "description": "Solo admin. Modifica los campos enviados del registro de cliente sin reemplazar los demás.",
         "security": [
           {
             "sanctum": []
@@ -1037,6 +1057,7 @@
           "Clientes"
         ],
         "summary": "Eliminar cliente",
+        "description": "Solo admin. Elimina el registro de cliente indicado.",
         "security": [
           {
             "sanctum": []
@@ -1065,7 +1086,7 @@
           "Reportes"
         ],
         "summary": "Listar reportes",
-        "description": "Ruta autenticada; actualmente no restringida por rol en el backend.",
+        "description": "Admin recibe todos los reportes; cada cliente solo recibe los vinculados a sus solicitudes.",
         "security": [
           {
             "sanctum": []
@@ -1095,7 +1116,7 @@
           "Reportes"
         ],
         "summary": "Crear reporte técnico",
-        "description": "Solo admin. Actualiza la solicitud como completada y envía la factura por correo al cliente.",
+        "description": "Solo admin. Calcula el costo total, crea el informe, cambia la solicitud vinculada a estado resuelto y, si hay una cuenta de cliente asociada, intenta enviarle la factura por correo.",
         "security": [
           {
             "sanctum": []
@@ -1113,7 +1134,7 @@
         },
         "responses": {
           "201": {
-            "description": "Reporte guardado y correo enviado.",
+            "description": "Reporte creado; el envío de correo se intenta si la solicitud tiene un usuario asociado.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1135,6 +1156,115 @@
         "x-required-role": "admin"
       }
     },
+    "/reportes/comentarios": {
+      "post": {
+        "tags": [
+          "Reportes"
+        ],
+        "summary": "Registrar comentario o seguimiento",
+        "description": "Requiere token Sanctum. Registra una felicitación, falla posterior al mantenimiento, duda o sugerencia asociada a un reporte y al usuario autenticado. El mensaje admite hasta 1000 caracteres.",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportCommentInput"
+              },
+              "example": {
+                "reporte_servicio_id": 25,
+                "tipo": "duda",
+                "mensaje": "¿Qué recomendaciones de uso debo seguir?"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Seguimiento registrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportCommentCreated"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/reportes/exportar/excel": {
+      "get": {
+        "tags": [
+          "Reportes"
+        ],
+        "summary": "Exportar balance general a Excel",
+        "description": "Requiere token Sanctum. Descarga el archivo reporte_contable_general.xlsx con tres hojas: balance general, detalle de mantenimientos y detalle de ventas de inventario.",
+        "operationId": "exportGeneralReportExcel",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Libro Excel contable general.",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/reportes/exportar/csv": {
+      "get": {
+        "tags": [
+          "Reportes"
+        ],
+        "summary": "Exportar balance general a CSV",
+        "description": "Requiere token Sanctum. Descarga reporte_contable_general.csv con los datos del balance general en formato CSV.",
+        "operationId": "exportGeneralReportCsv",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Archivo CSV del balance general.",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
     "/reportes/{id}": {
       "parameters": [
         {
@@ -1146,6 +1276,7 @@
           "Reportes"
         ],
         "summary": "Consultar reporte",
+        "description": "Admin puede consultar cualquier reporte; el cliente solo puede consultar reportes de sus propias solicitudes.",
         "security": [
           {
             "sanctum": []
@@ -1182,6 +1313,7 @@
           "Reportes"
         ],
         "summary": "Descargar factura PDF",
+        "description": "Genera y descarga la factura PDF del informe técnico. Un cliente solo puede descargar facturas de sus propios reportes; el administrador puede descargar cualquiera.",
         "security": [
           {
             "sanctum": []
@@ -1204,6 +1336,100 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/reportes/{id}/exportar/excel": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ReportId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Reportes"
+        ],
+        "summary": "Exportar reporte técnico a Excel",
+        "description": "Requiere token Sanctum. Descarga el archivo reporte_{id}.xlsx con los datos del reporte técnico indicado. El parámetro id es el identificador del reporte.",
+        "operationId": "exportServiceReportExcel",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Archivo Excel del reporte técnico.",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/reportes/{id}/exportar/csv": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ReportId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Reportes"
+        ],
+        "summary": "Exportar reporte técnico a CSV",
+        "description": "Requiere token Sanctum. Descarga el archivo reporte_{id}.csv con los datos del reporte técnico indicado. El parámetro id es el identificador del reporte.",
+        "operationId": "exportServiceReportCsv",
+        "security": [
+          {
+            "sanctum": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Archivo CSV del reporte técnico.",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "tags": [
+          "Documentación"
+        ],
+        "summary": "Obtener especificación OpenAPI",
+        "description": "Devuelve el documento JSON OpenAPI servido por Laravel para que Swagger UI y otros clientes puedan cargar la descripción de la API.",
+        "operationId": "getOpenApiSpecification",
+        "responses": {
+          "200": {
+            "description": "Documento OpenAPI en formato JSON.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
           }
         }
       }
@@ -1244,7 +1470,7 @@
         "schema": { "type": "integer", "minimum": 1 }
       },
       "ClientId": {
-        "name": "clientes",
+        "name": "cliente",
         "in": "path",
         "required": true,
         "description": "Identificador del cliente.",
@@ -1868,6 +2094,15 @@
           "admin_id": {
             "type": "integer"
           },
+          "nombre_cliente": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nombre conservado al crear el informe, con fallback al perfil del usuario."
+          },
+          "telefono_cliente": {
+            "type": "string",
+            "nullable": true
+          },
           "diagnostico": {
             "type": "string"
           },
@@ -1947,6 +2182,81 @@
           },
           "reporte": {
             "$ref": "#/components/schemas/ServiceReport"
+          }
+        }
+      },
+      "ReportCommentInput": {
+        "type": "object",
+        "required": [
+          "reporte_servicio_id",
+          "tipo",
+          "mensaje"
+        ],
+        "properties": {
+          "reporte_servicio_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Identificador de un reporte técnico existente."
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "felicitacion",
+              "falla_post_mantenimiento",
+              "duda",
+              "sugerencia"
+            ],
+            "description": "Clasificación del comentario o seguimiento."
+          },
+          "mensaje": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        }
+      },
+      "ReportComment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "reporte_servicio_id": {
+            "type": "integer"
+          },
+          "user_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "felicitacion",
+              "falla_post_mantenimiento",
+              "duda",
+              "sugerencia"
+            ]
+          },
+          "mensaje": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ReportCommentCreated": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ReportComment"
           }
         }
       }
