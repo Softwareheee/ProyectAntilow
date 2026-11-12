@@ -49,4 +49,4 @@ RUN composer install \
 
 EXPOSE 10000
 
-CMD ["sh", "-c", "php artisan migrate --force && php artisan db:seed --force && exec apache2-foreground"]
+CMD ["sh", "-c", "DATABASE_URL=\"${DATABASE_URL_UNPOOLED:-$DATABASE_URL}\" php artisan migrate --force && php artisan db:seed --force && exec apache2-foreground"]
